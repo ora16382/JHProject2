@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC
+"-//Apache Software Foundation//DTD Tiles Configuration 2.0//EN"
+"http://tiles.apache.org/dtds/tiles-config_2_0.dtd">
+<!-- template 이 있는 definition 에서는 value="" 가능하지만 상속받은 밑에 definition 들에서는 value="" 할 수 없음 -->
+<tiles-definitions>
+	<definition name="baseLayout" template="/WEB-INF/views/common/layout.jsp">
+		<put-attribute name="title" value=""/>
+	    <put-attribute name="subTitle" value=""/>
+		<put-attribute name="header" value="/WEB-INF/views/common/header.jsp"/>
+		<put-attribute name="side" value="/WEB-INF/views/common/side.jsp"/>
+		<put-attribute name="body" value=""/>
+		<put-attribute name="footer" value="/WEB-INF/views/common/footer.jsp"/>
+	</definition>
+	
+	
+	<definition name="" extends="baseLayout">
+		<put-attribute name="subTitle" value="메인 페이지"/>
+		<put-attribute name="title" value="Main Page" />
+		<put-attribute name="body" value="/WEB-INF/views/main.jsp" />
+	</definition>
+	
+	<definition name="/main" extends="baseLayout">
+		<put-attribute name="subTitle" value="메인 페이지"/>
+		<put-attribute name="title" value="Main Page" />
+		<put-attribute name="body" value="/WEB-INF/views/main.jsp" />
+	</definition>
+	
+	<definition name="/member/listMembers" extends="baseLayout">
+		<put-attribute name="subTitle" value="회원 목록"/>
+		<put-attribute name="title" value="회원목록창"/>
+		<put-attribute name="body" value="/WEB-INF/views/member/listMembers.jsp"/>
+	</definition>
+	
+	<definition name="/member/loginForm" extends="baseLayout">
+	<put-attribute name="subTitle" value="Login"/>
+		<put-attribute name="title" value="로그인창"/>
+		<put-attribute name="body" value="/WEB-INF/views/member/loginForm.jsp"/>
+	</definition>
+	
+	<definition name="/member/memberForm" extends="baseLayout">
+	   	<put-attribute name="subTitle" value="Sign-Up"/>
+		<put-attribute name="title" value="회원가입창"/>
+		<put-attribute name="body" value="/WEB-INF/views/member/memberForm.jsp"/>
+	</definition>
+	
+	<definition name="/member/modMember" extends="baseLayout">
+	<put-attribute name="subTitle" value="Modify"/>
+		<put-attribute name="title" value="회원수정창"/>
+		<put-attribute name="body" value="/WEB-INF/views/member/modMember.jsp"/>
+	</definition>
+</tiles-definitions>

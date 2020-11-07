@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+	<mapper namespace="mapper.board">
+	<resultMap type="articleVO" id="articlesResult">
+		<result property="level" column="lvl"/>
+		<result property="articleNO" column="articleNO"/>
+		<result property="parentNO" column="parentNO"/>
+		<result property="title" column="title"/>
+		<result property="content" column="content"/>
+		<result property="writeDate" column="writeDate"/>
+		<result property="imageFileName" column="imageFileName"/>
+		<result property="views" column="views"/>
+	</resultMap>
+	
+	<resultMap type="imageVO" id="imgResult">
+		<result property="imageFileNO" column="imageFileNO"/>
+		<result property="imageFileName" column="imageFileName"/>
+		<result property="articleNO" column="articleNO"/>
+	</resultMap>
+	
+	<resultMap type="commentVO" id="commentResult">
+		<result property="commentNO" column="commentNO"/>
+		<result property="body" column="body"/>
+		<result property="articleNO" column="articleNO"/>
+		<result property="id" column="id"/>
+		<result property="regDate" column="regDate"/>
+	</resultMap>
+	
+ 		<!-- connect 문이 없는 곳에서는 select level 불가 -->
+ 		<!-- 결과 값(레코드) 가 없는 경우에는 null이 아닌 비어있는 리스트 객체를 반환-->
+ 	<select id="selectAllArticlesList" resultMap="articlesResult" parameterType="java.util.HashMap">
+ 		<![CDATA[
+ 			select * from (
+ 			   select ROWNUM as recNum, lvl, articleNO, parentNO, title, content, id, writedate, views
+	 			 from(
+	 			  	select level as lvl, articleNO, parentNO, title, content, writeDate, imageFileName, id, views
+	 				from t_board
+	 				START WITH parentNO=0
+	 				CONNECT BY PRIOR articleNO=parentNO
+	 				ORDER SIBLINGS BY articleNO DESC))
+	 		where 
+	 			recNum between(#{section}-1)*100+(#{pageNum}-1)*20+1 and (#{section}-1)*100+#{pageNum}*20
+ 				
+ 		]]>
+ 	</select>
+ 	
+ 	<!-- 아마 레코드가 없으면 0 을 반환 -->
+ 	<select id="selectTotalArticle" resultType="int" >
+ 		<![CDATA[
+ 			select count(articleNO)
+ 			from t_board
+ 		]]>
+ 	</select>
+ 	
+ 	<insert id="insertNewArticle" parameterType="java.util.Map">
+ 		<![CDATA[
+ 			insert into t_board(articleNO, parentNO, title, content, imageFileName, id)
+ 			values(#{articleNO},#{parentNO},#{title},#{content},null,#{id})
+ 		]]>
+ 	</insert>
+ 	
+ 	<!-- 한 게시글에 대해 한꺼번에 많은 이미지를 추가 -->
+	<insert id="insertNewImage" parameterType="java.util.Map">
+ 		<foreach item="item" collection="list" open="insert ALL" separator=" " close="select * from dual">
+ 			into t_imageFile(imageFileNO, imageFileName, articleNO, regDate)
+ 			values(#{item.imageFileNO},#{item.imageFileName},#{item.articleNO},sysdate)
+ 		</foreach>
+ 	</insert>
+ 	
+ 	<!-- 이미지파일 리스트 찾기 -->
+ 	<select id="selectImageFileList" parameterType="int" resultMap="imgResult">
+ 		<![CDATA[
+ 			select * from t_imageFile
+ 			where articleNO = #{articleNO}
+ 		]]>
+ 	</select>
+ 	
+ 	<!-- 새 이미지파일 번호찾기  -->
+ 	<select id="selectNewImageFileNO" resultType="int">
+ 	<![CDATA[
+ 		select nvl(max(imageFileNO),0) from t_imageFile
+ 	]]>
+ 	</select>
+ 	
+ 	<!-- 새 게시글 번호 찾기 -->
+ 	<select id="selectNewArticleNO" resultType="int">
+ 		select nvl(max(articleNO),0) from t_board
+ 	</select>
+ 	
+ 	<!-- 새 코멘트 번호 찾기 -->
+ 	<select id="selectNewCommentNO" resultType="int">
+ 		select nvl(max(commentNO),0) from t_comment
+ 	</select>
+ 	<select id="selectArticle" parameterType="int" resultType="articleVO">
+ 		<![CDATA[
+ 			select * 
+ 			from t_board
+ 			where articleNO = #{articleNO}
+ 		]]>
+ 	</select>
+ 	
+ 	<update id="updateArticle" parameterType="java.util.Map">
+ 		update t_board 
+ 		set title=#{title}, content=#{content} 
+ 		where articleNO=#{articleNO}
+ 	</update>
+ 	
+ 	<update id="updateImageFile" parameterType="java.util.Map">
+ 		update t_imageFile 
+ 		set imageFileName=#{imageFileName} 
+ 		where articleNO=#{articleNO} and imageFileName=#{originalFileName}
+ 	</update>
+ 	
+ 	<update id="viewsUpdate" parameterType="int">
+		<![CDATA[
+			update t_board
+			set views = views+1
+			where articleNO = #{articleNO}
+		]]> 	
+	</update>
+	
+ 	<delete id="deleteArticle" parameterType="int">
+ 		delete from t_board
+ 		where articleNO in (
+ 		select articleNO from t_board
+ 		start with articleNO = #{articleNO}
+ 		connect by prior articleNO = parentNO)
+ 	</delete>
+ 	
+ 	<!-- 코멘트 조회 -->
+ 	<select id="selectAllComment" parameterType="int" resultMap="commentResult">
+		select * from t_comment
+ 		where articleNO = #{articleNO}
+ 		order by commentNO asc
+ 	</select>
+ 	
+ 	<!-- 게시글 별 코멘트 갯수 조회 -->
+ 	<select id="commentCount" parameterType="articleVO" resultType="int">
+ 		select count(*) from t_comment
+ 		where articleNO = #{articleNO}
+ 	</select>
+ 	
+ 	<!-- 코멘트 등록 -->
+ 	<insert id="insertComment" parameterType="java.util.Map">
+ 		insert into t_comment(commentNO, articleNO, id, body)
+ 		values(#{commentNO},#{articleNO},#{id},#{body})
+ 	</insert>
+ 	<!-- 코멘트 삭제 -->
+ 	
+	</mapper>
